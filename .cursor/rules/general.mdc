@@ -1,0 +1,14 @@
+---
+description: Follow these rules for every request.
+globs: 
+alwaysApply: false
+---
+- A Carmageddon: Max Damage clone using:
+    - Bundler: Vite 
+    - Rendering: Three.js
+    - Physics: Cannon.js 
+    - Audio: Howler.js
+- Always go with the simplest implemenation version that works. No fallbacks if librarys don't work, just throw errors but never implement fallbacks.
+- Find the steps in [project-steps.md](mdc:project-steps.md)
+- Work on whatever steps I tell yopu to work on and only work on those steps.
+- Then stop, I will give you further instruction.
