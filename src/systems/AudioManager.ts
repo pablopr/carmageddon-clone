@@ -16,12 +16,12 @@ export class AudioManager {
   
   // Engine sound specific variables
   private engineSound: Howl | null = null;
-  private engineVolume: number = 0.5;
+  private engineVolume: number = 0.3;
   private enginePitch: number = 1.0;
   
   // State
   private muted: boolean = false;
-  private masterVolume: number = 0.7;
+  private masterVolume: number = 0.8;
   private soundEnabled: boolean = true;
   
   // IDs for looping sounds

@@ -65,6 +65,9 @@ export class CityGenerator {
     // Create ground
     this.createGround();
     
+    // Create perimeter walls to prevent cars from exiting the map
+    this.createPerimeterWalls();
+    
     // Skip road generation completely
     
     // Place buildings
@@ -100,6 +103,90 @@ export class CityGenerator {
     ground.name = 'ground';
     
     this.scene.add(ground);
+  }
+  
+  /**
+   * Create red walls around the perimeter of the city to prevent cars from exiting the map
+   */
+  private createPerimeterWalls(): void {
+    console.log('Creating perimeter walls...');
+    
+    const wallHeight = 15; // Height of the walls
+    const wallThickness = 2; // Thickness of the walls
+    const halfCitySize = this.citySize / 2;
+    
+    // Create a material for the red walls
+    const wallMaterial = new THREE.MeshStandardMaterial({
+      color: 0xff0000, // Bright red color
+      roughness: 0.7,
+      metalness: 0.3,
+      emissive: 0x330000, // Slight glow effect
+    });
+    
+    // Create the four walls for each side of the perimeter
+    const walls = [
+      // North wall
+      {
+        position: { x: 0, y: wallHeight / 2, z: -halfCitySize - wallThickness / 2 },
+        dimensions: { x: this.citySize + wallThickness * 2, y: wallHeight, z: wallThickness }
+      },
+      // South wall
+      {
+        position: { x: 0, y: wallHeight / 2, z: halfCitySize + wallThickness / 2 },
+        dimensions: { x: this.citySize + wallThickness * 2, y: wallHeight, z: wallThickness }
+      },
+      // East wall
+      {
+        position: { x: halfCitySize + wallThickness / 2, y: wallHeight / 2, z: 0 },
+        dimensions: { x: wallThickness, y: wallHeight, z: this.citySize }
+      },
+      // West wall
+      {
+        position: { x: -halfCitySize - wallThickness / 2, y: wallHeight / 2, z: 0 },
+        dimensions: { x: wallThickness, y: wallHeight, z: this.citySize }
+      }
+    ];
+    
+    // Create each wall and add it to the scene with physics
+    walls.forEach((wall, index) => {
+      // Create the visual mesh
+      const wallGeometry = new THREE.BoxGeometry(
+        wall.dimensions.x,
+        wall.dimensions.y, 
+        wall.dimensions.z
+      );
+      const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
+      wallMesh.position.set(wall.position.x, wall.position.y, wall.position.z);
+      wallMesh.castShadow = true;
+      wallMesh.receiveShadow = true;
+      wallMesh.name = `perimeter-wall-${index}`;
+      
+      // Add the wall to the scene
+      this.scene.add(wallMesh);
+      
+      // Create a physics body for the wall
+      const physicsBody = this.physicsWorld.createBox(
+        { 
+          x: wall.dimensions.x / 2, 
+          y: wall.dimensions.y / 2, 
+          z: wall.dimensions.z / 2 
+        },
+        { 
+          x: wall.position.x, 
+          y: wall.position.y, 
+          z: wall.position.z 
+        },
+        { mass: 0 } // Static body (mass = 0)
+      );
+      
+      // Register with physics world and associate with the wall mesh
+      this.physicsWorld.addBody(physicsBody, wallMesh);
+      
+      // Register with collision manager
+      this.collisionManager.registerObject(physicsBody, CollisionObjectType.BUILDING);
+    });
+    
+    console.log('Perimeter walls created');
   }
   
   /**
