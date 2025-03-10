@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { Vehicle } from '../entities/vehicles/Vehicle';
 import { PhysicsWorld } from '../core/physics/PhysicsWorld';
+import { AudioManager } from './AudioManager';
 
 // Enum for object types involved in collisions
 export enum CollisionObjectType {
@@ -279,8 +280,13 @@ export class CollisionManager {
     // Add to hit objects
     this.hitObjects.add(event.bodyB.id);
     
+    // Check if this is a Trump statue by looking at the target mesh userData
+    const isTrumpStatue = event.target && 
+                         event.target.userData && 
+                         event.target.userData.isTrumpStatue === true;
+    
     // Calculate score based on speed (higher speed = more points)
-    const scoreBase = 100;
+    const scoreBase = isTrumpStatue ? 300 : 100; // 3x points for Trump statue
     const speedMultiplier = Math.min(3, event.impactVelocity / 5);
     let scoreGain = Math.round(scoreBase * speedMultiplier);
     
@@ -301,14 +307,28 @@ export class CollisionManager {
     // Add to total score
     this.score += scoreGain;
     
-    // Show score gain
-    this.showScorePopup(event.collisionPoint, `+${scoreGain.toFixed(0)}`, 0xff0000);
+    // Show score gain with different color for Trump statue
+    const scoreColor = isTrumpStatue ? 0xffd700 : 0xff0000; // Gold color for Trump
+    this.showScorePopup(event.collisionPoint, `+${scoreGain.toFixed(0)}`, scoreColor);
     
-    // Blood effect handled by ParticleSystem now
-    // this.createBloodEffect(event.collisionPoint, event.impactVelocity);
+    // Play appropriate sound
+    const soundSystem = AudioManager.getInstance();
+    if (isTrumpStatue) {
+      soundSystem.playCollisionSound('trump', 1.0); // Special Trump sound at full volume
+    } else {
+      soundSystem.playCollisionSound('human', 0.8); // Regular human sound
+    }
+    
+    // Create blood effect with higher intensity for Trump statue
+    const bloodIntensity = isTrumpStatue ? event.impactVelocity * 1.5 : event.impactVelocity;
+    this.createBloodEffect(event.collisionPoint, bloodIntensity);
     
     if (this.debugMode) {
-      console.log(`Human collision! Score: ${this.score}, Combo: ${this.consecutiveHumanHits}`);
+      if (isTrumpStatue) {
+        console.log(`Trump statue hit! Score: ${this.score}, Bonus points awarded!`);
+      } else {
+        console.log(`Human collision! Score: ${this.score}, Combo: ${this.consecutiveHumanHits}`);
+      }
     }
   }
   

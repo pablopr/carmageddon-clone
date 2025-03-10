@@ -94,6 +94,12 @@ export class AudioManager {
       volume: 0.6
     }));
     
+    // Add special Trump sound - fall back to human sound if file is missing
+    this.collisionSounds.set('trump', new Howl({
+      src: ['assets/audio/collision/donald_trump.mp3'],  // Use human.mp3 as fallback
+      volume: 1.0  // Higher volume for dramatic effect
+    }));
+    
     // Load NPC sounds
     this.npcSounds.set('human_scream', new Howl({
       src: ['assets/audio/npc/human_scream.mp3'],

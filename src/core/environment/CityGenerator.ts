@@ -76,6 +76,9 @@ export class CityGenerator {
     // Place props
     this.placePropsInOpenSpaces();
     
+    // Place a special Trump statue in the city center
+    this.placeTrumpStatue();
+    
     // Apply optimizations if requested
     if (optimize) {
       this.optimizeCity();
@@ -423,6 +426,81 @@ export class CityGenerator {
       case 1: return 15; // Residential building
       case 3: return 12; // Small shop
       default: return 15;
+    }
+  }
+  
+  /**
+   * Place a special Trump statue in a prominent location
+   */
+  private placeTrumpStatue(): void {
+    // Find a good position near the center of the city (0,0) but with some slight offset
+    const position = new THREE.Vector3(5, 0, 5);
+    
+    // Check for collisions with buildings
+    if (!this.checkPropCollisions(position, 5)) {
+      // We need to find the index of the Trump statue in the prop models
+      // Let's add a loop to find a prop with the right userData
+      const props = this.assets.getAllProps();
+      let trumpIndex = -1;
+      
+      for (let i = 0; i < props.length; i++) {
+        if (props[i].userData && props[i].userData.type === 'trump_statue') {
+          trumpIndex = i;
+          break;
+        }
+      }
+      
+      if (trumpIndex !== -1) {
+        // Create the Trump statue
+        const trumpStatue = this.assets.getPropByIndex(trumpIndex);
+        trumpStatue.position.copy(position);
+        
+        // Ensure statue is at ground level
+        trumpStatue.position.y = 0;
+        
+        // Make it face a dramatic direction
+        trumpStatue.rotation.y = Math.PI / 4; // 45 degrees
+        
+        // Name for identification
+        trumpStatue.name = `trump-statue-special`;
+        
+        // Add to scene
+        this.scene.add(trumpStatue);
+        
+        // Add physics body for the statue - now with mass to make it destructible
+        // Use correct dimensions to match the actual model
+        const physicsBody = this.physicsWorld.createBox(
+          { x: 0.7/2, y: 1.8/2, z: 0.7/2 }, // Use actual model dimensions (not 2x)
+          { x: position.x, y: 0.9, z: position.z }, // Position at ground with half the height (center of mass)
+          { mass: 200 } // Give it mass to make it destructible, but heavier than humans
+        );
+        
+        // Apply the same rotation as the visual model
+        const quaternion = new THREE.Quaternion();
+        quaternion.setFromEuler(new THREE.Euler(0, trumpStatue.rotation.y, 0));
+        physicsBody.quaternion.set(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+        
+        // Set restitution (bounciness) and friction
+        physicsBody.material = new CANNON.Material("trumpMaterial");
+        physicsBody.material.restitution = 0.3;
+        physicsBody.material.friction = 0.5;
+        
+        // Register with physics world and associate with the statue
+        this.physicsWorld.addBody(physicsBody, trumpStatue);
+        
+        // Set a custom user data property on the mesh to identify as Trump statue
+        trumpStatue.userData.isTrumpStatue = true;
+        trumpStatue.userData.isSpecial = true;
+        
+        // Register with collision manager with special HUMAN_NPC type to trigger blood
+        this.collisionManager.registerObject(physicsBody, CollisionObjectType.HUMAN_NPC);
+        
+        console.log('Special Trump statue placed at', position);
+      } else {
+        console.warn('Could not find Trump statue in prop models');
+      }
+    } else {
+      console.warn('Could not place special Trump statue due to collisions');
     }
   }
 } 

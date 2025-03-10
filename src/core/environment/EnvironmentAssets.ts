@@ -463,6 +463,12 @@ export class EnvironmentAssets {
       const trashCan = this.createTrashCan();
       this.propModels.push(trashCan);
     }
+    
+    // Add Donald Trump statues
+    for (let i = 0; i < 5; i++) {
+      const trumpStatue = this.createTrumpStatue();
+      this.propModels.push(trumpStatue);
+    }
   }
   
   /**
@@ -485,7 +491,7 @@ export class EnvironmentAssets {
     treeLOD.addLevel(lowDetailTree, 30);
     
     // Position adjustments
-    treeLOD.position.y = 1;
+    treeLOD.position.y = 0;
     
     return treeLOD;
   }
@@ -504,7 +510,7 @@ export class EnvironmentAssets {
     const trunkMaterial = this.getSharedMaterial('prop-wood');
     
     const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-    trunk.position.y = 1;
+    trunk.position.y = 0;
     treeObject.add(trunk);
     
     // Tree foliage
@@ -515,7 +521,7 @@ export class EnvironmentAssets {
       new THREE.SphereGeometry(1, foliageSegments, foliageSegments),
       foliageMaterial
     );
-    mainFoliage.position.y = 2.5;
+    mainFoliage.position.y = 1.5;
     treeObject.add(mainFoliage);
     
     // Additional foliage clusters if detail level requires them
@@ -524,7 +530,7 @@ export class EnvironmentAssets {
         new THREE.SphereGeometry(0.7, foliageSegments, foliageSegments),
         foliageMaterial
       );
-      secondaryFoliage.position.set(0.5, 2.0, 0.5);
+      secondaryFoliage.position.set(0.5, 1.0, 0.5);
       treeObject.add(secondaryFoliage);
       
       if (foliageCount > 2) {
@@ -532,7 +538,7 @@ export class EnvironmentAssets {
           new THREE.SphereGeometry(0.5, foliageSegments, foliageSegments),
           foliageMaterial
         );
-        tertiaryFoliage.position.set(-0.4, 1.8, -0.4);
+        tertiaryFoliage.position.set(-0.4, 0.8, -0.4);
         treeObject.add(tertiaryFoliage);
       }
     }
@@ -556,7 +562,7 @@ export class EnvironmentAssets {
     lampLOD.addLevel(lowDetailLamp, 20);
     
     // Position adjustments
-    lampLOD.position.y = 2;
+    lampLOD.position.y = 0;
     
     return lampLOD;
   }
@@ -623,7 +629,7 @@ export class EnvironmentAssets {
     benchLOD.addLevel(lowDetailBench, 25);
     
     // Position adjustments
-    benchLOD.position.y = 0.3;
+    benchLOD.position.y = 0;
     
     return benchLOD;
   }
@@ -686,7 +692,7 @@ export class EnvironmentAssets {
     
     for (const [x, y, z] of positions) {
       const leg = new THREE.Mesh(legGeometry, metalMaterial);
-      leg.position.set(x, y, z);
+      leg.position.set(x, 0, z);
       benchObject.add(leg);
     }
     
@@ -704,7 +710,7 @@ export class EnvironmentAssets {
     const canMaterial = this.getSharedMaterial('prop-metal');
     
     const can = new THREE.Mesh(canGeometry, canMaterial);
-    can.position.y = 0.4;
+    can.position.y = 0;
     can.castShadow = true;
     can.receiveShadow = true;
     trashCan.add(can);
@@ -714,12 +720,97 @@ export class EnvironmentAssets {
     const lidMaterial = this.getSharedMaterial('prop-metal');
     
     const lid = new THREE.Mesh(lidGeometry, lidMaterial);
-    lid.position.y = 0.85;
+    lid.position.y = 0.5;
     lid.castShadow = true;
     lid.receiveShadow = true;
     trashCan.add(lid);
     
+    // Position the entire trash can at ground level
+    trashCan.position.y = 0;
+    
     return trashCan;
+  }
+  
+  /**
+   * Create a Donald Trump statue by loading the model
+   * @returns Trump statue object
+   */
+  private createTrumpStatue(): THREE.Object3D {
+    console.log('Creating Trump statue...');
+    
+    // Create a placeholder while the model loads
+    const placeholder = new THREE.Group();
+    
+    // Add a simple box as placeholder (2x larger)
+    const boxGeometry = new THREE.BoxGeometry(0.7, 1.8, 0.7); // 2x the original size
+    const boxMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc });
+    const box = new THREE.Mesh(boxGeometry, boxMaterial);
+    box.position.y = 0.9; // Position box with bottom at y=0 (move up by half height to center properly)
+    box.castShadow = true;
+    box.receiveShadow = true;
+    placeholder.add(box);
+    
+    // Set user data for identification
+    placeholder.userData = {
+      type: 'trump_statue',
+      isPlaceholder: true,
+      isDestructible: true // Mark as destructible so we can handle collisions
+    };
+    
+    // Load the actual GLTF model
+    const loadingPromise = new Promise<void>((resolve) => {
+      this.gltfLoader.load(
+        './assets/models/donald_trump.glb',
+        (gltf) => {
+          // Model loaded successfully
+          console.log('Trump model loaded successfully');
+          
+          // Process the model
+          const model = gltf.scene;
+          
+          // Scale the model to 2x the original size (1.0 instead of 0.5)
+          model.scale.set(1.0, 1.0, 1.0);
+          
+          // Ensure it's at ground level (y=0)
+          model.position.y = 0;
+          
+          // Add shadows
+          model.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+          
+          // Set user data
+          model.userData = {
+            type: 'trump_statue',
+            isPlaceholder: false,
+            isDestructible: true // Mark as destructible so we can handle collisions
+          };
+          
+          // Replace placeholder with actual model
+          // (In a real app, we'd want to properly handle this replacement in the scene)
+          Object.assign(placeholder, model);
+          
+          resolve();
+        },
+        // Progress callback
+        (xhr) => {
+          console.log(`Trump model loading: ${(xhr.loaded / xhr.total) * 100}% loaded`);
+        },
+        // Error callback
+        (error) => {
+          console.error('Error loading Trump model:', error);
+          resolve(); // Resolve anyway to not block loading
+        }
+      );
+    });
+    
+    // Add to loading promises
+    this.loadingPromises.push(loadingPromise);
+    
+    return placeholder;
   }
   
   /**

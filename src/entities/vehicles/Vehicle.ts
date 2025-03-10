@@ -51,7 +51,7 @@ export class Vehicle {
   constructor(
     private scene: THREE.Scene,
     private physicsWorld: PhysicsWorld,
-    position: THREE.Vector3 = new THREE.Vector3(0, 1, 0)
+    position: THREE.Vector3 = new THREE.Vector3(0, 0, 0)
   ) {
     // Initialize DRACO loader
     this.dracoLoader = new DRACOLoader();
@@ -186,7 +186,7 @@ export class Vehicle {
         this.carModel.position.copy(this.mesh.position);
         
         // Fix the height offset - move down to ground level
-        this.carModel.position.y -= 0.5; // Lower model to touch the ground
+        this.carModel.position.y -= 1.1; // Lower model to touch the ground
         
         // Fix rotation - rotate to match game coordinate system
         // Make the car face forward (away from camera)
@@ -352,10 +352,10 @@ export class Vehicle {
     // Create a box shape
     const shape = new CANNON.Box(new CANNON.Vec3(1, 0.5, 2));
     
-    // Create the body
+    // Create the body - adjust position.y to add the height of half the box to ensure bottom is at y=0
     const body = new CANNON.Body({
       mass: 100, // Reduced weight for easier movement
-      position: new CANNON.Vec3(position.x, position.y, position.z),
+      position: new CANNON.Vec3(position.x, position.y + 0.5, position.z), // Add half the height to position the bottom at y=0
       shape: shape,
       material: new CANNON.Material("vehicleMaterial")
     });
@@ -472,6 +472,16 @@ export class Vehicle {
     this.body.velocity.x = directionVector.x;
     this.body.velocity.z = directionVector.z;
     
+    // Keep vertical velocity from physics for gravity effects
+    // But clamp it to prevent sinking too far or flying too high
+    this.body.velocity.y = Math.max(-10, Math.min(this.body.velocity.y, 10));
+    
+    // Ensure car doesn't sink below ground or fly too high
+    if (this.body.position.y < 0.5) { // 0.5 is half the car's height
+      this.body.position.y = 0.5;
+      this.body.velocity.y = 0;
+    }
+    
     // Make sure the body is active
     this.body.wakeUp();
     
@@ -481,10 +491,11 @@ export class Vehicle {
     
     // Update model position if loaded
     if (this.carModel) {
-      // Apply position from physics, but keep the y-offset fix for the model
+      // Apply position from physics to model's x and z
       this.carModel.position.x = position.x;
       this.carModel.position.z = position.z;
-      // Keep the y-position adjustment we made earlier (not directly copying y)
+      // Keep the y-position adjustment we made earlier (calculated from position.y)
+      this.carModel.position.y = position.y - 0.5; // Half the car's physical height, matches initial offset
       
       // Apply rotation from physics to the model
       // But keep initial rotation offset (PI around Y axis) we applied

@@ -132,6 +132,17 @@ Geometry instancing.
 Texture atlases and compressed textures.
 Garbage collection minimization (object pooling).
 
+17. Memory Management & Asset Loading
+Dynamic asset loading:
+Implement progressive loading based on player position.
+Unload distant or unused assets when memory usage exceeds thresholds.
+Asset streaming:
+Set up dynamic LOD system that adjusts based on performance metrics.
+Implement occlusion culling for urban environments.
+Memory monitoring:
+Add performance monitoring tools during development.
+Set memory usage budgets for models, textures, and audio.
+
 ## Phase 9: Polishing & Deployment Preparation
 18. Gameplay Polishing
 Adjust vehicle controls based on test feedback.
@@ -140,7 +151,8 @@ Ensure consistent UI and responsive feedback.
 19. Final Preparations for Deployment
 Set up continuous integration (CI/CD) for automatic builds and deployments.
 Configure hosting platform: GitHub Pages or Netlify.
-Phase 10: Launch & Post-Launch Features
+
+## Phase 10: Launch & Post-Launch Features
 20. Public Deployment
 Deploy the final stable build publicly online.
 Integrate analytics for player engagement tracking.
